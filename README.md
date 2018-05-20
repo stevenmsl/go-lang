@@ -22,7 +22,7 @@ Let say you work space (where “.gitignore” file resides) folder is C:\Repos\
 
 The “go build” command works the same way. The only difference is that the generated executable is resided in the folder from where the command was run.
 
-Install go-ethereum
+Install go-ethereum (make sure you run VS Code or command prompt under Admin privileges)
 
 - Go to http://tdm-gcc.tdragon.net/ to download the gcc compiler. After the installation, you should be able to    locate gcc command in the bin subfolder under your TDM-GCC installation folder something like: C:\TDM-GCC-64\bin
 
