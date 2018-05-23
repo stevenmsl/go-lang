@@ -10,21 +10,19 @@ You will also see a file named settings.json created under .vscode folder if thi
 */
 
 import (
-/*
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"time"
+	/*	"encoding/json"
+		"io"
+		"log"
+		"net/http"
+		"os"
+		"time"
 
-	"github.com/davecgh/go-spew/spew"
-	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
-*/
-)
+		"github.com/davecgh/go-spew/spew"
+		"github.com/gorilla/mux"
+		"github.com/joho/godotenv"
+	*/)
 
 //Block ...
 type Block struct {
@@ -33,6 +31,17 @@ type Block struct {
 	BPM       int
 	Hash      string
 	PrevHash  string
+}
+
+//Blockchain ...
+var Blockchain []Block
+
+func calculateHash(block Block) string {
+	record := string(block.Index) + block.Timestamp + string(block.BPM) + block.PrevHash
+	h := sha256.New()
+	h.Write([]byte(record))
+	hased := h.Sum(nil)
+	return hex.EncodeToString(hased)
 }
 
 func main() {
