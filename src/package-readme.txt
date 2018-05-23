@@ -1,3 +1,4 @@
+Package blockchain
 Installation:
 --view structs and slices cleanly formatted in our console
 go get github.com/davecgh/go-spew/spew
