@@ -12,16 +12,21 @@ You will also see a file named settings.json created under .vscode folder if thi
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"github.com/gorilla/mux"
+	"io"
+	"net/http"
+
 	"time"
-	/*	"encoding/json"
-		"io"
+	/*
+
 		"log"
-		"net/http"
+
 		"os"
 
 
 		"github.com/davecgh/go-spew/spew"
-		"github.com/gorilla/mux"
+
 		"github.com/joho/godotenv"
 	*/)
 
@@ -36,6 +41,11 @@ type Block struct {
 
 //Blockchain ...
 var Blockchain []Block
+
+//Message ...
+type Message struct {
+	BPM int
+}
 
 func generateBlock(oldBlock Block, BPM int) (Block, error) {
 	var newBlock Block
@@ -71,6 +81,62 @@ func isBlockValid(newBlock Block, oldBlock Block) bool {
 
 	return true
 
+}
+
+func replaceChain(newBlocks []Block) {
+	if len(newBlocks) > len(Blockchain) {
+		Blockchain = newBlocks
+	}
+}
+
+func run() error {
+	/*mux := makeMuxRouter()
+	httpAddr := os.Getenv("ADDR") */
+	return nil
+}
+func makeMuxRouter() http.Handler {
+	muxRouter := mux.NewRouter()
+	muxRouter.HandleFunc("/", handleGetBlockChain).Methods("GET")
+	muxRouter.HandleFunc("/", handleWriteBlock).Methods("POST")
+	return muxRouter
+}
+
+func handleGetBlockChain(w http.ResponseWriter, r *http.Request) {
+	bytes, err := json.MarshalIndent(Blockchain, "", "  ")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	io.WriteString(w, string(bytes))
+}
+
+func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
+	var m Message
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&m); err != nil {
+		respondWithJSON(w, r, http.StatusInternalServerError, r.Body)
+		return
+	}
+	defer r.Body.Close()
+	/*
+		newBlock, err := generateBlock(Blockchain[len(Blockchain)-1], m.BPM)
+		if err != nil {
+			respondWithJSON(w, r, http.StatusInternalServerError, m)
+			return
+		}
+	*/
+
+}
+
+func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload interface{}) {
+	response, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("HTTP 500: Internal Server Error"))
+		return
+	}
+	w.WriteHeader(code)
+	w.Write(response)
 }
 
 func main() {
