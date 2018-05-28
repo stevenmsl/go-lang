@@ -13,22 +13,15 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"io"
+	"log"
 	"net/http"
-
+	"os"
 	"time"
-	/*
-
-		"log"
-
-		"os"
-
-
-		"github.com/davecgh/go-spew/spew"
-
-		"github.com/joho/godotenv"
-	*/)
+)
 
 //Block ...
 type Block struct {
@@ -90,8 +83,21 @@ func replaceChain(newBlocks []Block) {
 }
 
 func run() error {
-	/*mux := makeMuxRouter()
-	httpAddr := os.Getenv("ADDR") */
+	mux := makeMuxRouter()
+	httpAddr := os.Getenv("ADDR")
+	log.Println("Listening on ", os.Getenv("ADDR"))
+	s := &http.Server{
+		Addr:           ":" + httpAddr,
+		Handler:        mux,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20, // 2^20
+	}
+
+	if err := s.ListenAndServe(); err != nil {
+		return err
+	}
+
 	return nil
 }
 func makeMuxRouter() http.Handler {
@@ -117,14 +123,23 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 		respondWithJSON(w, r, http.StatusInternalServerError, r.Body)
 		return
 	}
+	//A defer statement pushes a function call onto a list.
+	//The list of saved calls is executed after the surrounding function returns.
+	//What this means is that r.Body.Close will be executed at the very last after other statements have been executed.
 	defer r.Body.Close()
-	/*
-		newBlock, err := generateBlock(Blockchain[len(Blockchain)-1], m.BPM)
-		if err != nil {
-			respondWithJSON(w, r, http.StatusInternalServerError, m)
-			return
-		}
-	*/
+
+	newBlock, err := generateBlock(Blockchain[len(Blockchain)-1], m.BPM)
+	if err != nil {
+		respondWithJSON(w, r, http.StatusInternalServerError, m)
+		return
+	}
+	if isBlockValid(newBlock, Blockchain[len(Blockchain)-1]) {
+		newBlockchain := append(Blockchain, newBlock)
+		replaceChain(newBlockchain)
+		spew.Dump(Blockchain)
+	}
+
+	respondWithJSON(w, r, http.StatusCreated, newBlock)
 
 }
 
@@ -140,5 +155,17 @@ func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload i
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+	go func() {
+		t := time.Now()
+		genesisBlock := Block{0, t.String(), 0, "", ""}
+		spew.Dump(genesisBlock)
+		Blockchain = append(Blockchain, genesisBlock)
+	}()
+
+	log.Fatal(run())
 
 }
