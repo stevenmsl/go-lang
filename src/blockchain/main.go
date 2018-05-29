@@ -152,7 +152,8 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload interface{}) {
+func respondWithJSON(w http.ResponseWriter, r *http.Request, code int,
+	payload interface{} /* this means any type as all types implement the empty interface */) {
 	response, err := json.MarshalIndent(payload, "", "  ")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
