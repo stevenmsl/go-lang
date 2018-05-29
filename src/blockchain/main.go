@@ -1,6 +1,15 @@
 package main
 
 /*
+The .env file needs to be in the package folder (src\blockchain) so it can be located when you start debugging.
+*/
+
+/*
+Set the breakpoints before you start debugging.
+*/
+
+/*
+The .env file needs to be in the package folder (src\blockchain) so it can be located when you start debugging.
 Packages imported but not used will be deleted when you save the file if go.formatTool in user settings   is configured to use goreturns. Go to File\Preferences\Settings and put the following in the workspace settings to overwrite:
 {
     "go.formatTool": "gofmt"
