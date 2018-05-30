@@ -172,6 +172,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	//go keyword -  start a goroutine for an anonymous function call.
 	go func() {
 		t := time.Now()
 		genesisBlock := Block{0, t.String(), 0, "", ""}
