@@ -15,5 +15,6 @@ pkg/
 src/golang.org/
 src/github.com/
 src/blockchain/debug
+src/blockchain-networking/debug
 
 
