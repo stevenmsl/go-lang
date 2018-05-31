@@ -19,13 +19,16 @@ You will also see a file named settings.json created under .vscode folder if thi
 */
 
 import (
+	"bufio"
 	"crypto/sha256"
 	"encoding/hex"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/joho/godotenv"
+	"io"
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -108,7 +111,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer server.Close()
-	for {
+	for { //Use infinite loop to accept the new connections. Use go keyword (async call) so it won’t clog up the for loop.
 		conn, err := server.Accept()
 		if err != nil {
 			log.Fatal(err)
@@ -119,5 +122,28 @@ func main() {
 }
 
 func handleConn(conn net.Conn) {
+	io.WriteString(conn, "Enter a new BPM:")
+	scanner := bufio.NewScanner(conn)
+	go func() {
+		for scanner.Scan() {
+			bpm, err := strconv.Atoi(scanner.Text())
+			if err != nil {
+				log.Printf("%v not a number: %v", scanner.Text(), err)
+				continue
+			}
+			newBlock, err := generateBlock(Blockchain[len(Blockchain)-1], bpm)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			if isBlockValid(newBlock, Blockchain[len(Blockchain)-1]) {
+				newBlockchain := append(Blockchain, newBlock)
+				replaceChain(newBlockchain)
+			}
+			bcServer <- Blockchain
+			io.WriteString(conn, "\n Enter a new BPM:")
+		}
+	}()
+
 	defer conn.Close()
 }
