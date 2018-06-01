@@ -22,6 +22,7 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/joho/godotenv"
 	"io"
@@ -29,6 +30,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -44,6 +46,7 @@ type Block struct {
 //Blockchain ...
 var Blockchain []Block
 var bcServer chan []Block
+var mutex = &sync.Mutex{}
 
 //Message ...
 type Message struct {
@@ -122,6 +125,7 @@ func main() {
 }
 
 func handleConn(conn net.Conn) {
+	defer conn.Close()
 	io.WriteString(conn, "Enter a new BPM:")
 	scanner := bufio.NewScanner(conn)
 	/*
@@ -150,5 +154,22 @@ func handleConn(conn net.Conn) {
 		}
 	}()
 
-	defer conn.Close()
+	go func() {
+		for {
+			time.Sleep(30 * time.Second)
+			mutex.Lock()
+			output, err := json.Marshal(Blockchain)
+			if err != nil {
+				log.Fatal(err)
+			}
+			mutex.Unlock()
+			io.WriteString(conn, string(output))
+
+		}
+	}()
+
+	for range bcServer {
+		spew.Dump(Blockchain)
+	}
+
 }
