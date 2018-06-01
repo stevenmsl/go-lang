@@ -124,6 +124,11 @@ func main() {
 func handleConn(conn net.Conn) {
 	io.WriteString(conn, "Enter a new BPM:")
 	scanner := bufio.NewScanner(conn)
+	/*
+		Why the for scanner.Scan() loop needs to be tucked away in its own Go routine so
+		it can run concurrently and separately from other connections?
+		Do we not call the handle Conn in a Go routine already?
+	*/
 	go func() {
 		for scanner.Scan() {
 			bpm, err := strconv.Atoi(scanner.Text())
@@ -141,7 +146,7 @@ func handleConn(conn net.Conn) {
 				replaceChain(newBlockchain)
 			}
 			bcServer <- Blockchain
-			io.WriteString(conn, "\n Enter a new BPM:")
+			io.WriteString(conn, "\n Enter a new BPM:") //prompt user to enter new BPM
 		}
 	}()
 
