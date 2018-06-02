@@ -131,9 +131,12 @@ func handleConn(conn net.Conn) {
 	/*
 		Why the for scanner.Scan() loop needs to be tucked away in its own Go routine so
 		it can run concurrently and separately from other connections?
-		Do we not call the handle Conn in a Go routine already?
+		Do we not call the handle Conn using Go routine already?
+		Answer: I think even inside the same connection you are entering new BPMs and
+		receiving broadcast at the same time both using infinite loop.
+		Make sense to use Go routine in both cases not to clog up each other.
 	*/
-	go func() {
+	go func() { //Asking client to enter a new BPM
 		for scanner.Scan() {
 			bpm, err := strconv.Atoi(scanner.Text())
 			if err != nil {
@@ -154,7 +157,7 @@ func handleConn(conn net.Conn) {
 		}
 	}()
 
-	go func() {
+	go func() { //Broadcast the blockchain back to the client
 		for {
 			time.Sleep(30 * time.Second)
 			mutex.Lock()
@@ -168,7 +171,9 @@ func handleConn(conn net.Conn) {
 		}
 	}()
 
-	for range bcServer {
+	//range over channels
+	//acting as a receiver
+	for _ = range bcServer {
 		spew.Dump(Blockchain)
 	}
 
