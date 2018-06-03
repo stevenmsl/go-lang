@@ -9,16 +9,16 @@ How the “go install” command works in Windows 10:
 Let say you work space (where “.gitignore” file resides) folder is C:\Repos\Go\go-lang
 -   Add the following to your user variables:
     Variable: GOPATH, Value: C:\Repos\Go\go-lang
-    (It seems you should only have one workspace for the Go on the machine for a specific user. By doing so you will have only one entry in GOPATH variable, which is important as later you will start using go get command to download additional packages and want to control where to store those packages. It seems the go get command will take the first entry in the GOPATH as the default workspace folder and put the downloaded packages in its src subfolder.)
+    (It seems you should only have one workspace for all your Go projects. By doing so you will have only one entry in GOPATH variable, which is important as later on you will start using go get command to download additional packages. It seems the "go get" command only looks at the first entry in the GOPATH and uses it as the workspace folder. The "go get" command will then put the downloaded packages in the workspace's src subfolder.)
 
 -	In the command prompt, change the directory to C:\Repos\Go\go-lang
--	Create a folder named src under the workspace folder. The is where your source codes reside.        
+-	Create a folder named src under the workspace folder. This is where your source codes reside.        
     C:\Repos\Go\go-lang\src
 -	Create package folders under the src folder. Put you source code files under package folder
     For example: C:\Repos\Go\go-lang\src\hello\hello.go
 -	Run the following command in the command prompt. hello is a package folder under the src folder
     go install hello
--	You should see an exe file created in c:\Repos\Go\go-lang\bin folder. In this case it will be hello.exe 
+-	You should see an exe file created in the c:\Repos\Go\go-lang\bin folder. In this case it should be hello.exe 
 
 The “go build” command works the same way. The only difference is that the generated executable is resided in the folder from where the command was run.
 
