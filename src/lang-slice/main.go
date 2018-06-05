@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	slice()
 	growSlice()
 }
 
@@ -33,5 +34,28 @@ func growSlice() {
 	fmt.Println("after growing:")
 	fmt.Printf("len %d\n", len(s))
 	fmt.Printf("cap %d\n", cap(s))
+	fmt.Println(s)
+}
+
+func slice() {
+	/*
+		Slicing does not copy the slice's data.
+		It creates a new slice value that points to the original array.
+		This makes slice operations as efficient as manipulating array indices.
+		Therefore, modifying the elements (not the slice itself) of a re-slice modifies the elements of the original slice:
+	*/
+	s := []string{"a", "b", "c", "d", "e"}
+	t := s[2:]
+	fmt.Printf("len(s):%d\n", len(s))
+	fmt.Printf("cap(s):%d\n", cap(s))
+	fmt.Print("s:")
+	fmt.Println(s)
+	fmt.Printf("len(t):%d\n", len(t))
+	fmt.Printf("cap(t):%d\n", cap(t))
+	fmt.Print("t:")
+	fmt.Println(t)
+	t[0] = "c1"
+	fmt.Println("After s is modified ")
+	fmt.Print("s:")
 	fmt.Println(s)
 }
