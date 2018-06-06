@@ -10,6 +10,13 @@ import (
 )
 
 func main() {
+	s := []string{"a", "b", "c"}
+	fmt.Println("Before appending...")
+	fmt.Println(s)
+	s = append(s, "d", "e")
+	fmt.Println("After appending...")
+	fmt.Println(s)
+
 	slice()
 	growSlice()
 }
@@ -58,4 +65,16 @@ func slice() {
 	fmt.Println("After s is modified ")
 	fmt.Print("s:")
 	fmt.Println(s)
+}
+
+func append(slice []string, data ...string) []string {
+	m := len(slice)
+	n := m + len(data)
+	if n > cap(slice) { //Double the size if needed
+		newSlice := make([]string, n*2)
+		copy(newSlice, slice)
+		slice = newSlice
+	}
+	copy(slice[m:n], data)
+	return slice
 }

@@ -16,6 +16,7 @@ src/golang.org/
 src/github.com/
 src/blockchain/debug
 src/blockchain-networking/debug
+src/lang-slice/debug
 .vscode/launch.json
 
 
