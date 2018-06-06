@@ -67,6 +67,7 @@ func slice() {
 	fmt.Println(s)
 }
 
+//... means variadic parameter - accepts zero or more values of a specified type.
 func append(slice []string, data ...string) []string {
 	m := len(slice)
 	n := m + len(data)
