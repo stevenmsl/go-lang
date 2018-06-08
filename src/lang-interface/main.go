@@ -5,7 +5,7 @@ Interfaces specify behavior, and behavior is defined by set of methods.
 */
 
 /*
-In Go, types which implement all interface’s method automatically satisfies such interface.
+In Go, types which implement all interface’s method automatically satisfy such interface.
 You don’t need to use keywords such as implements to say that certain type implements a certain interface.
 */
 
