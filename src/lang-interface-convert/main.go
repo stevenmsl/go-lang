@@ -98,3 +98,13 @@ func checkReader() {
 	//from the FileReader interface.
 	//sr = r
 }
+
+func typeAssertion() {
+	var r FileReader = BasicFileReadWriter{}
+	//The following will fail the type assertion
+	//as complier wouldn’t know if r can be considered as a BasicXFileReader -
+	//BasicXFileReader can implement methods that are not defined in the FileReader interface.
+	//var xr BasicXFileReader = r
+	_ = r
+
+}
