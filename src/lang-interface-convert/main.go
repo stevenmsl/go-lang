@@ -91,6 +91,7 @@ func (BasicFileReader) openTextFile(filename string) []byte {
 }
 
 func main() {
+	typeSwitch()
 	typeAssertionConcrete()
 	typeAssertionInterface()
 
@@ -152,4 +153,18 @@ func typeAssertionInterface() {
 	rw, ok = r.(FileReadWriter)
 	fmt.Printf("%T %v %v\n", rw, rw, ok)
 
+}
+
+func typeSwitch() {
+	fmt.Println("In typeSwitch...")
+	var rw *BasicFileReadWriter
+	var r FileReader = rw
+	//using optional simple statement - aux := 1
+	switch aux := 1; r.(type) {
+	case nil:
+		fmt.Printf("nil %d", aux)
+	case *BasicFileReadWriter:
+		fmt.Printf("%T %d\n", r, aux<<2)
+
+	}
 }
