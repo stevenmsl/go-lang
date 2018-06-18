@@ -7,11 +7,29 @@ Channel Allow different concurrent parts of the program to communicate
 import (
 	"fmt"
 	"strconv"
+	"time"
 )
 
 func main() {
+	bufferedChannel()
 	runSum()
 	buyItems()
+}
+
+func bufferedChannel() {
+	fmt.Println("In bufferedChannel ...")
+	bc := make(chan int, 2) //If you provide the buffer length in the second parameter this channel become a buffered channel
+	bc <- 1
+	go delayInput(bc, 2)
+	fmt.Println(<-bc)
+	fmt.Println(<-bc) //This line will wait for 3 seconds until the integer 2 is sent to the channel
+}
+
+func delayInput(bc chan<- int, input int) {
+	fmt.Println("In delayInput...Sleep for 3 secs")
+	time.Sleep(3 * time.Second)
+	bc <- input
+	fmt.Printf("%v sent to channel\n", input)
 }
 
 func runSum() {
