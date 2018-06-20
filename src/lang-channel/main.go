@@ -11,6 +11,11 @@ import (
 )
 
 func main() {
+
+	//The The following will throw a fatal error: all goroutines are asleep - deadlock!
+	//Failed to continue.
+	//bufferedChanDeadlock()
+
 	bufferedChannel()
 	runSum()
 	buyItems()
@@ -23,6 +28,15 @@ func bufferedChannel() {
 	go delayInput(bc, 2)
 	fmt.Println(<-bc)
 	fmt.Println(<-bc) //This line will wait for 3 seconds until the integer 2 is sent to the channel
+}
+
+func bufferedChanDeadlock() {
+	fmt.Println("In bufferedChanDeadlock ...")
+	bc := make(chan int, 2)
+	bc <- 1
+	bc <- 2
+	bc <- 3 //Overfill the buffer without letting the code a chance to read/remove a value from the channel
+	fmt.Println(<-bc)
 }
 
 func delayInput(bc chan<- int, input int) {

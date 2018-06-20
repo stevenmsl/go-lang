@@ -19,3 +19,4 @@ src/blockchain-networking/debug
 src/lang-slice/debug
 .vscode/launch.json
 src/lang-interface/debug
+src/lang-channel/debug
