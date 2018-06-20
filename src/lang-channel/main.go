@@ -12,6 +12,8 @@ import (
 
 func main() {
 
+	bufferedChanResolveDeadlock()
+
 	//The The following will throw a fatal error: all goroutines are asleep - deadlock!
 	//Failed to continue.
 	//bufferedChanDeadlock()
@@ -37,6 +39,25 @@ func bufferedChanDeadlock() {
 	bc <- 2
 	bc <- 3 //Overfill the buffer without letting the code a chance to read/remove a value from the channel
 	fmt.Println(<-bc)
+}
+
+func bufferedChanResolveDeadlock() {
+	fmt.Println("In bufferedChanResolveDeadlock...")
+	bc := make(chan int, 2)
+	bc <- 1
+	bc <- 2
+
+	add3 := func() {
+		bc <- 3
+	}
+
+	go add3() //The goroutine is being called before the channel is being emptied, but that is fine, the goroutine will wait until the channel is available.
+	//It doesn’t block the main thread.
+
+	fmt.Println(<-bc)
+	fmt.Println(<-bc)
+	fmt.Println(<-bc)
+
 }
 
 func delayInput(bc chan<- int, input int) {
