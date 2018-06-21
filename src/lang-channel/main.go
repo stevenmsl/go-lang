@@ -11,16 +11,43 @@ import (
 )
 
 func main() {
+	selectChannel()
 
 	bufferedChanResolveDeadlock()
-
 	//The The following will throw a fatal error: all goroutines are asleep - deadlock!
 	//Failed to continue.
 	//bufferedChanDeadlock()
-
 	bufferedChannel()
 	runSum()
 	buyItems()
+
+}
+
+func fibonacci(c, quit chan int) {
+	x, y := 0, 1
+	for {
+		select { //A select blocks until one of its cases can run
+		case c <- x:
+			x, y = y, x+y
+		case <-quit:
+			fmt.Println("quit")
+			return
+		}
+	}
+}
+
+func selectChannel() {
+	fmt.Println("In selectChannel ...")
+	c := make(chan int)
+	quit := make(chan int)
+
+	go func() {
+		for i := 0; i < 10; i++ {
+			fmt.Println(<-c)
+		}
+		quit <- 0
+	}()
+	fibonacci(c, quit)
 }
 
 func bufferedChannel() {
