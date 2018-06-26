@@ -50,7 +50,7 @@ func printString(value string) {
 	fmt.Println("In printString...")
 	var wg sync.WaitGroup //WaitGroup waits for a collection of goroutines to finish
 	wg.Add(2)
-	data := []byte(value)
+	data := []byte(value) //[]byte is not concurrent-safe
 	//Constrain the go routines to only work on certain the part of the slice.
 	//Using lexical scope to avoid the need of implementing synchronization
 	//the program will be simpler, and the performance would be better.
