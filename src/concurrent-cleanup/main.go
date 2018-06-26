@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"time"
 )
 
 func main() {
+	runDoWork()
 	runDoWorkLeak()
 }
 
@@ -32,4 +34,41 @@ func runDoWorkLeak() {
 		strings <- "test"
 	*/
 	doWorkLeak(nil)
+}
+
+func doWork(
+	//allow caller to signal cancellation.
+	//By convention, this signal is usually a read-only channel named done and
+	//is the first parameter.
+	done <-chan interface{},
+	strings <-chan string) <-chan interface{} {
+	terminated := make(chan interface{})
+	fmt.Println("In doWork ...")
+	go func() {
+		defer fmt.Println("doWork exited")
+		defer close(terminated)
+		for {
+			select {
+			case s := <-strings:
+				fmt.Println(s)
+			case <-done:
+				fmt.Println("In doWork cancellation received")
+				return
+			}
+		}
+	}()
+	return terminated
+}
+
+func runDoWork() {
+	fmt.Println("In runDoWork ...")
+	done := make(chan interface{})
+	terminated := doWork(done, nil)
+	go func() {
+		time.Sleep(1 * time.Second)
+		fmt.Println("Canceling doWork goroutine...")
+		close(done)
+	}()
+	<-terminated
+	fmt.Println("runDoWork done.")
 }
