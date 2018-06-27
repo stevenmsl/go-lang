@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 )
 
 func main() {
-	runDoWork()
-	runDoWorkLeak()
+	runNewRandStream()
+	//runNewRandStreamLeak()
+	//runDoWork()
+	//runDoWorkLeak()
 }
 
 func doWorkLeak(strings <-chan string) <-chan interface{} {
@@ -71,4 +74,58 @@ func runDoWork() {
 	}()
 	<-terminated
 	fmt.Println("runDoWork done.")
+}
+
+//in this function there is no way of telling the producer it can stop.
+func newRandStreamLeak() <-chan int {
+	randStream := make(chan int)
+	go func() {
+		defer fmt.Println("newRandStreamLeak closure exited.") //will never be executed
+		defer close(randStream)                                //will never be executed
+		for {
+			//the go routine blocks once the channel is no longer being read from
+			randStream <- rand.Int()
+		}
+	}()
+	return randStream
+}
+
+func runNewRandStreamLeak() {
+	fmt.Println("In runNewRandStreamLeak...")
+	randStream := newRandStreamLeak()
+	fmt.Println(" 3 random ints:")
+	for i := 1; i <= 3; i++ {
+		fmt.Printf("%d: %d\n", i, <-randStream)
+	}
+}
+
+//provide the producer goroutine with a channel informing it to exit
+func newRandStream(done <-chan interface{}) <-chan int {
+	randStream := make(chan int)
+	go func() {
+		defer fmt.Println("newRandStream closure exited.") //will never be executed
+		defer close(randStream)                            //will never be executed
+		for {
+			select {
+			case randStream <- rand.Int():
+			case <-done:
+				return
+			}
+		}
+	}()
+	return randStream
+}
+
+func runNewRandStream() {
+	fmt.Println("In runNewRandStream...")
+	done := make(chan interface{})
+	randStream := newRandStream(done)
+	fmt.Println(" 3 random ints:")
+	for i := 1; i <= 3; i++ {
+		fmt.Printf("%d: %d\n", i, <-randStream)
+	}
+	close(done)
+	//simulate there is more work to do
+	time.Sleep(1 * time.Second)
+	fmt.Println("runNewRandStream done")
 }
