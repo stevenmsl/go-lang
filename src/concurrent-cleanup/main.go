@@ -1,3 +1,9 @@
+/*
+The "done" channel convention - If a goroutine is responsible for creating a goroutine,
+it is also responsible for ensuring it can stop the goroutine.
+
+*/
+
 package main
 
 import (
@@ -7,7 +13,8 @@ import (
 )
 
 func main() {
-	runNewRandStream()
+	runSigs()
+	//runNewRandStream()
 	//runNewRandStreamLeak()
 	//runDoWork()
 	//runDoWorkLeak()
@@ -128,4 +135,85 @@ func runNewRandStream() {
 	//simulate there is more work to do
 	time.Sleep(1 * time.Second)
 	fmt.Println("runNewRandStream done")
+}
+
+//the or-channel pattern
+func or(channels ...<-chan interface{}) <-chan interface{} {
+	//termination criteria
+	switch len(channels) {
+	case 0:
+		return nil
+	case 1:
+		return channels[0]
+	}
+	orDone := make(chan interface{})
+	go func() {
+		defer fmt.Println("closing orDone chan")
+		defer close(orDone)
+		switch len(channels) {
+		case 2:
+			select {
+			case <-channels[0]:
+			case <-channels[1]:
+			}
+		default:
+			select {
+			case <-channels[0]:
+			case <-channels[1]:
+			case <-channels[2]:
+			case <-or(append(channels[3:], orDone)...):
+			}
+		}
+
+	}()
+	fmt.Println("returning orDone chan")
+	return orDone
+}
+
+func sig(after time.Duration) <-chan interface{} {
+	c := make(chan interface{})
+	go func() {
+		defer fmt.Printf("closing chan with duration %v\n", after)
+		defer close(c)
+		fmt.Printf("chan with duration %v sleeping...\n", after)
+		time.Sleep(after)
+	}()
+	return c
+}
+
+func runSigs() {
+	start := time.Now()
+
+	/*
+		So this is pretty much the same as create a certain number of go routines,
+		each with a select statement that will receive from certain number of channels.
+		go routine 1
+		<-1
+		<-2
+		<-3
+		<-orDone2
+
+		go routine 2
+		<-4
+		<-5
+		<-orDone1 (pass down from the parent)
+		<-orDone2
+
+		Once 1 is closed this will end the go routine 1, which orDone2 will be closed immediately,
+		which will in turn end the go routine 2 and close the orDone1.
+
+	*/
+	<-or(
+		sig(1*time.Second),
+		sig(2*time.Second),
+		sig(3*time.Second),
+		sig(4*time.Second),
+		sig(5*time.Second),
+	)
+
+	//Will hit this line in roughly one second. And the chan with 1 second duration will be closed.
+	fmt.Printf("done after %v\n", time.Since(start))
+	//Wait a bit longer to see all other 4 channels got closed.
+	time.Sleep(8 * time.Second)
+
 }
