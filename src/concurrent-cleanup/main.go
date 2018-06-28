@@ -175,7 +175,7 @@ func sig(after time.Duration) <-chan interface{} {
 	go func() {
 		defer fmt.Printf("closing chan with duration %v\n", after)
 		defer close(c)
-		fmt.Printf("chan with duration %v sleeping...\n", after)
+		fmt.Printf("chan with duration %v kicked off...\n", after)
 		time.Sleep(after)
 	}()
 	return c
@@ -188,7 +188,7 @@ func runSigs() {
 		So this is pretty much the same as create a certain number of go routines,
 		each with a select statement that will receive from certain number of channels.
 		go routine 1
-		<-1
+		<-1 (1 sec)
 		<-2
 		<-3
 		<-orDone2
@@ -196,16 +196,18 @@ func runSigs() {
 		go routine 2
 		<-4
 		<-5
-		<-orDone1 (pass down from the parent)
+		<-orDone (passing down from the first call)
 		<-orDone2
 
-		Once 1 is closed this will end the go routine 1, which orDone2 will be closed immediately,
-		which will in turn end the go routine 2 and close the orDone1.
+		Once 1 is closed the go routine 1 will proceed to close orDone,
+		which in turns will trigger the select case <-orDon in the go routine 2. As a result,
+		the go routine 2 will proceed to close the orDone2.
 
+		2 to 5 will however close at a much later time after the orDone is closed. Will not this cause a problem?
 	*/
-	<-or(
-		sig(1*time.Second),
+	<-or2(
 		sig(2*time.Second),
+		sig(1*time.Second),
 		sig(3*time.Second),
 		sig(4*time.Second),
 		sig(5*time.Second),
@@ -216,4 +218,44 @@ func runSigs() {
 	//Wait a bit longer to see all other 4 channels got closed.
 	time.Sleep(8 * time.Second)
 
+}
+
+//This function is implemented to help understand how the ‘or’ function works.
+//It only takes 5 channels so the process can be illustrated and explained more easily.
+func or2(chan1, chan2, chan3, chan4, chan5 <-chan interface{}) <-chan interface{} {
+	orDone := make(chan interface{})
+	orDone2 := make(chan interface{})
+	go func() {
+		defer fmt.Println("closing orDone in go routine 1")
+		defer close(orDone)
+		//only one of these cases will be triggered depending on which one received the message first
+		//The routine will then proceed to close orDone chan.
+		select {
+		case <-chan1:
+			fmt.Println("Received from chan1 in go routine 1")
+		case <-chan2:
+			fmt.Println("Received from chan2 in go routine 1")
+		case <-chan3:
+			fmt.Println("Received from chan3 in go routine 1")
+		case <-orDone2:
+			fmt.Println("Received from orDone2 in go routine 1")
+		}
+	}()
+
+	go func() {
+		defer fmt.Println("closing orDone2 in go routine 2")
+		defer close(orDone2)
+		select {
+		case <-chan4:
+			fmt.Println("Received from chan4 in go routine 2")
+		case <-chan5:
+			fmt.Println("Received from chan5 in go routine 2")
+		case <-orDone:
+			fmt.Println("Received from orDone in go routine 2")
+		case <-orDone2:
+			fmt.Println("Received from orDone2 in go routine 2")
+		}
+	}()
+
+	return orDone
 }
