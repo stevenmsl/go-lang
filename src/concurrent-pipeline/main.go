@@ -21,18 +21,59 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
+	"time"
 )
 
 func main() {
-	runPipelineTake()
+	runPipelineTakeFn()
+	//runPipelineTake()
 	//runPipelineC()
 	//runPipelineS()
 	//runPipelineBP()
 }
 
+func runPipelineTakeFn() {
+	done := make(chan interface{})
+	defer func() {
+		close(done)
+		fmt.Println("runPipelineTakeFn closed")
+		time.Sleep(3 * time.Second) //Wait a bit so you can see the message printed when a stage is closed.
+	}()
+	rand := func() interface{} { return rand.Int() }
+	for num := range take(done, repeatFn(done, rand), 10) {
+		fmt.Printf("%v\n", num)
+	}
+
+}
+
+func repeatFn(
+	done <-chan interface{},
+	fn func() interface{},
+) <-chan interface{} {
+	valueStream := make(chan interface{})
+	go func() {
+		defer func() {
+			fmt.Println("stage repeatFn closed")
+			close(valueStream)
+		}()
+		for {
+			select {
+			case <-done:
+				return
+			case valueStream <- fn():
+			}
+		}
+	}()
+	return valueStream
+}
+
 func runPipelineTake() {
 	done := make(chan interface{})
-	defer close(done)
+	defer func() {
+		close(done)
+	}()
+
 	for num := range take(done, repeat(done, 1, 2), 10) {
 		fmt.Printf("%v ", num)
 	}
@@ -46,7 +87,7 @@ func repeat(
 ) <-chan interface{} {
 	valueStream := make(chan interface{})
 	go func() {
-		defer fmt.Println("repeatGenerator closed")
+		defer fmt.Println("repeat closed")
 		defer close(valueStream)
 		for {
 			for _, v := range values {
@@ -69,7 +110,11 @@ func take(
 ) <-chan interface{} {
 	takeStream := make(chan interface{})
 	go func() {
-		defer close(takeStream)
+		defer func() {
+			fmt.Println("stage take closed")
+			close(takeStream)
+		}()
+
 		for i := 0; i < num; i++ {
 			select {
 			case <-done:
