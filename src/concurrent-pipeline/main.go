@@ -26,11 +26,28 @@ import (
 )
 
 func main() {
-	runPipelineTakeFn()
+	runPipelineString()
+	//runPipelineTakeFn()
 	//runPipelineTake()
 	//runPipelineC()
 	//runPipelineS()
 	//runPipelineBP()
+}
+
+func runPipelineString() {
+	done := make(chan interface{})
+	defer func() {
+		close(done)
+		fmt.Println("runPipelineTakeFn closed")
+		time.Sleep(3 * time.Second)
+	}()
+
+	var message string
+	for token := range toString(done, take(done, repeat(done, "I", "am."), 5)) {
+		message += token
+	}
+	fmt.Printf("message: %s...\n", message)
+
 }
 
 func runPipelineTakeFn() {
@@ -45,6 +62,26 @@ func runPipelineTakeFn() {
 		fmt.Printf("%v\n", num)
 	}
 
+}
+
+//stage: type assertion, Change the data type of the channel from interface {} to string
+func toString(
+	done <-chan interface{},
+	valueStream <-chan interface{},
+) <-chan string {
+	stringStream := make(chan string)
+	go func() {
+		defer close(stringStream)
+		for v := range valueStream {
+			select {
+			case <-done:
+				return
+			case stringStream <- v.(string):
+			}
+		}
+
+	}()
+	return stringStream
 }
 
 func repeatFn(
