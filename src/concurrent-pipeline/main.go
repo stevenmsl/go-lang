@@ -22,6 +22,8 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"stage"
+	"testing"
 	"time"
 )
 
@@ -34,6 +36,20 @@ func main() {
 	//runPipelineBP()
 }
 
+func runBenchmark() {
+
+}
+
+//BenchmarkGeneric ...
+func BenchmarkGeneric(b *testing.B) {
+	done := make(chan interface{})
+	defer close(done)
+	b.ResetTimer()
+	for range stage.ToString(done, take(done, repeat(done, "a"), b.N)) {
+
+	}
+}
+
 func runPipelineString() {
 	done := make(chan interface{})
 	defer func() {
@@ -43,7 +59,7 @@ func runPipelineString() {
 	}()
 
 	var message string
-	for token := range toString(done, take(done, repeat(done, "I", "am."), 5)) {
+	for token := range stage.ToString(done, take(done, repeat(done, "I", "am."), 5)) {
 		message += token
 	}
 	fmt.Printf("message: %s...\n", message)
@@ -62,26 +78,6 @@ func runPipelineTakeFn() {
 		fmt.Printf("%v\n", num)
 	}
 
-}
-
-//stage: type assertion, Change the data type of the channel from interface {} to string
-func toString(
-	done <-chan interface{},
-	valueStream <-chan interface{},
-) <-chan string {
-	stringStream := make(chan string)
-	go func() {
-		defer close(stringStream)
-		for v := range valueStream {
-			select {
-			case <-done:
-				return
-			case stringStream <- v.(string):
-			}
-		}
-
-	}()
-	return stringStream
 }
 
 func repeatFn(
