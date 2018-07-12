@@ -45,7 +45,7 @@ func BenchmarkGeneric(b *testing.B) {
 	done := make(chan interface{})
 	defer close(done)
 	b.ResetTimer()
-	for range stage.ToString(done, take(done, repeat(done, "a"), b.N)) {
+	for range stage.ToString(done, stage.Take(done, stage.Repeat(done, "a"), b.N)) {
 
 	}
 }
@@ -59,7 +59,7 @@ func runPipelineString() {
 	}()
 
 	var message string
-	for token := range stage.ToString(done, take(done, repeat(done, "I", "am."), 5)) {
+	for token := range stage.ToString(done, stage.Take(done, stage.Repeat(done, "I", "am."), 5)) {
 		message += token
 	}
 	fmt.Printf("message: %s...\n", message)
@@ -74,31 +74,10 @@ func runPipelineTakeFn() {
 		time.Sleep(3 * time.Second) //Wait a bit so you can see the message printed when a stage is closed.
 	}()
 	rand := func() interface{} { return rand.Int() }
-	for num := range take(done, repeatFn(done, rand), 10) {
+	for num := range stage.Take(done, stage.RepeatFn(done, rand), 10) {
 		fmt.Printf("%v\n", num)
 	}
 
-}
-
-func repeatFn(
-	done <-chan interface{},
-	fn func() interface{},
-) <-chan interface{} {
-	valueStream := make(chan interface{})
-	go func() {
-		defer func() {
-			fmt.Println("stage repeatFn closed")
-			close(valueStream)
-		}()
-		for {
-			select {
-			case <-done:
-				return
-			case valueStream <- fn():
-			}
-		}
-	}()
-	return valueStream
 }
 
 func runPipelineTake() {
@@ -107,56 +86,10 @@ func runPipelineTake() {
 		close(done)
 	}()
 
-	for num := range take(done, repeat(done, 1, 2), 10) {
+	for num := range stage.Take(done, stage.Repeat(done, 1, 2), 10) {
 		fmt.Printf("%v ", num)
 	}
 	fmt.Println()
-}
-
-//stage: generate a stream of data
-func repeat(
-	done <-chan interface{},
-	values ...interface{},
-) <-chan interface{} {
-	valueStream := make(chan interface{})
-	go func() {
-		defer fmt.Println("repeat closed")
-		defer close(valueStream)
-		for {
-			for _, v := range values {
-				select {
-				case <-done:
-					return
-				case valueStream <- v:
-				}
-			}
-		}
-	}()
-	return valueStream
-}
-
-//stage: limit the pipeline
-func take(
-	done <-chan interface{},
-	valueStream <-chan interface{},
-	num int,
-) <-chan interface{} {
-	takeStream := make(chan interface{})
-	go func() {
-		defer func() {
-			fmt.Println("stage take closed")
-			close(takeStream)
-		}()
-
-		for i := 0; i < num; i++ {
-			select {
-			case <-done:
-				return
-			case takeStream <- <-valueStream:
-			}
-		}
-	}()
-	return takeStream
 }
 
 /*
@@ -177,9 +110,9 @@ by the time you finished printing the result in the current stage.
 func runPipelineC() {
 	done := make(chan interface{})
 	defer close(done)
-	intStream := generator(done, 1, 2, 3, 4)
+	intStream := stage.Generator(done, 1, 2, 3, 4)
 	//each stage of the pipeline is executing concurrently
-	pipeline := multiplyC(done, addC(done, multiplyC(done, intStream, 1), 2), 3)
+	pipeline := stage.MultiplyC(done, stage.AddC(done, stage.MultiplyC(done, intStream, 1), 2), 3)
 	index := 0
 	//If the range expression is a channel, at most one iteration variable is permitted.
 	for v := range pipeline {
@@ -188,107 +121,17 @@ func runPipelineC() {
 	}
 }
 
-//t huhe generator function converts a discrete set of values into a stream of data on a channel
-func generator(done <-chan interface{}, integers ...int) <-chan int {
-	intStream := make(chan int)
-	go func() {
-		defer fmt.Println("Generator closed")
-		defer close(intStream)
-		for _, i := range integers {
-			select {
-			case <-done:
-				return
-			case intStream <- i:
-				fmt.Printf("Generated the number %v\n", i)
-			}
-		}
-	}()
-	return intStream
-}
-
-func multiplyC(
-	done <-chan interface{},
-	intStream <-chan int,
-	multiplier int,
-) <-chan int {
-	multipliedStream := make(chan int)
-	go func() {
-		defer fmt.Printf("stage Multiplied by %v closed\n", multiplier)
-		defer close(multipliedStream)
-		for i := range intStream {
-			select {
-			case <-done:
-				return
-			case multipliedStream <- i * multiplier:
-				fmt.Printf("%v x %v = %v done by stage Multiplied by %v \n",
-					i, multiplier, i*multiplier, multiplier)
-			}
-		}
-	}()
-	return multipliedStream
-}
-
-func addC(
-	done <-chan interface{},
-	intStream <-chan int,
-	additive int,
-) <-chan int {
-	addedStream := make(chan int)
-	go func() {
-		defer fmt.Printf("stage Added by %v closed\n", additive)
-		defer close(addedStream)
-		for i := range intStream {
-			select {
-			case <-done:
-				return
-			case addedStream <- i + additive:
-				fmt.Printf("%v + %v = %v done by stage Added by %v \n",
-					i, additive, i*additive, additive)
-			}
-		}
-	}()
-	return addedStream
-}
-
 func runPipelineS() {
 	ints := []int{1, 2, 3, 4}
 	for _, v := range ints {
 		//We instantiate the pipeline for each iteration: 4 times in this case
-		fmt.Println(multiplyS(addS(multiplyS(v, 2), 1), 2))
+		fmt.Println(stage.MultiplyS(stage.AddS(stage.MultiplyS(v, 2), 1), 2))
 	}
-}
-
-//stream processing stage
-func multiplyS(value, multiplier int) int {
-	return value * multiplier
-}
-
-//stream processing
-func addS(value, additive int) int {
-	return value + additive
 }
 
 func runPipelineBP() {
 	ints := []int{1, 2, 3, 4}
-	for _, v := range addBP(multiplyBP(ints, 2), 1) {
+	for _, v := range stage.AddBP(stage.MultiplyBP(ints, 2), 1) {
 		fmt.Println(v)
 	}
-}
-
-//Batch processing stage
-func multiplyBP(values []int, multiplier int) []int {
-	multipliedValues := make([]int, len(values))
-	for i, v := range values {
-		multipliedValues[i] = v * multiplier
-	}
-	return multipliedValues
-}
-
-//Batch processing stage
-func addBP(values []int, additive int) []int {
-	addedValues := make([]int, len(values))
-	for i, v := range values {
-		addedValues[i] = v + additive
-	}
-	return addedValues
 }
