@@ -32,7 +32,7 @@ func RepeatFn(
 	valueStream := make(chan interface{})
 	go func() {
 		defer func() {
-			fmt.Println("stage repeatFn closed")
+			//fmt.Println("stage repeatFn closed")
 			close(valueStream)
 		}()
 		for {
@@ -53,7 +53,29 @@ func Repeat(
 ) <-chan interface{} {
 	valueStream := make(chan interface{})
 	go func() {
-		defer fmt.Println("repeat closed")
+		//defer fmt.Println("repeat closed")
+		defer close(valueStream)
+		for {
+			for _, v := range values {
+				select {
+				case <-done:
+					return
+				case valueStream <- v:
+				}
+			}
+		}
+	}()
+	return valueStream
+}
+
+//RepeatS stage (typed) : generate a stream of data
+func RepeatS(
+	done <-chan interface{},
+	values ...string,
+) <-chan string {
+	valueStream := make(chan string)
+	go func() {
+		//defer fmt.Println("repeat closed")
 		defer close(valueStream)
 		for {
 			for _, v := range values {
@@ -77,7 +99,31 @@ func Take(
 	takeStream := make(chan interface{})
 	go func() {
 		defer func() {
-			fmt.Println("stage take closed")
+			//fmt.Println("stage take closed")
+			close(takeStream)
+		}()
+
+		for i := 0; i < num; i++ {
+			select {
+			case <-done:
+				return
+			case takeStream <- <-valueStream:
+			}
+		}
+	}()
+	return takeStream
+}
+
+//TakeS stage: limit the pipeline
+func TakeS(
+	done <-chan interface{},
+	valueStream <-chan string,
+	num int,
+) <-chan string {
+	takeStream := make(chan string)
+	go func() {
+		defer func() {
+			//fmt.Println("stage take closed")
 			close(takeStream)
 		}()
 
@@ -96,14 +142,14 @@ func Take(
 func Generator(done <-chan interface{}, integers ...int) <-chan int {
 	intStream := make(chan int)
 	go func() {
-		defer fmt.Println("Generator closed")
+		//defer fmt.Println("Generator closed")
 		defer close(intStream)
 		for _, i := range integers {
 			select {
 			case <-done:
 				return
 			case intStream <- i:
-				fmt.Printf("Generated the number %v\n", i)
+				//fmt.Printf("Generated the number %v\n", i)
 			}
 		}
 	}()
@@ -118,7 +164,7 @@ func MultiplyC(
 ) <-chan int {
 	multipliedStream := make(chan int)
 	go func() {
-		defer fmt.Printf("stage Multiplied by %v closed\n", multiplier)
+		//defer fmt.Printf("stage Multiplied by %v closed\n", multiplier)
 		defer close(multipliedStream)
 		for i := range intStream {
 			select {
@@ -141,7 +187,7 @@ func AddC(
 ) <-chan int {
 	addedStream := make(chan int)
 	go func() {
-		defer fmt.Printf("stage Added by %v closed\n", additive)
+		//defer fmt.Printf("stage Added by %v closed\n", additive)
 		defer close(addedStream)
 		for i := range intStream {
 			select {

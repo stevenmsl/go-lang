@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"math/rand"
 	"stage"
-	"testing"
+
 	"time"
 )
 
@@ -34,20 +34,6 @@ func main() {
 	//runPipelineC()
 	//runPipelineS()
 	//runPipelineBP()
-}
-
-func runBenchmark() {
-
-}
-
-//BenchmarkGeneric ...
-func BenchmarkGeneric(b *testing.B) {
-	done := make(chan interface{})
-	defer close(done)
-	b.ResetTimer()
-	for range stage.ToString(done, stage.Take(done, stage.Repeat(done, "a"), b.N)) {
-
-	}
 }
 
 func runPipelineString() {
