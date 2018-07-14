@@ -28,12 +28,29 @@ import (
 )
 
 func main() {
-	runPipelineString()
+	runPipelineInt()
+	//runPipelineString()
 	//runPipelineTakeFn()
 	//runPipelineTake()
 	//runPipelineC()
 	//runPipelineS()
 	//runPipelineBP()
+}
+
+func runPipelineInt() {
+	rand := func() interface{} {
+		return rand.Intn(50000000)
+	}
+	done := make(chan interface{})
+	defer close(done)
+
+	start := time.Now()
+	randIntStream := stage.ToInt(done, stage.RepeatFn(done, rand))
+	fmt.Println("Primes:")
+	for prime := range stage.Take(done, stage.PrimeFinder(done, randIntStream), 10) {
+		fmt.Printf("\t%d\n", prime)
+	}
+	fmt.Printf("Search took: %v", time.Since(start))
 }
 
 func runPipelineString() {

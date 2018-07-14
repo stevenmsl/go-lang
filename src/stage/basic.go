@@ -4,6 +4,57 @@ import (
 	"fmt"
 )
 
+func isPrime(value int) bool {
+	if value <= 0 {
+		return false
+	}
+	if value == 2 || value == 3 {
+		return true
+	}
+
+	return false
+}
+
+//PrimeFinder ...
+func PrimeFinder(
+	done <-chan interface{},
+	valueStream <-chan int,
+) <-chan interface{} {
+	primeStream := make(chan interface{})
+	go func() {
+		defer close(primeStream)
+		for v := range valueStream {
+			select {
+			case <-done:
+				return
+			case primeStream <- v:
+			}
+		}
+
+	}()
+	return primeStream
+}
+
+//ToInt stage
+func ToInt(
+	done <-chan interface{},
+	valueStream <-chan interface{},
+) <-chan int {
+	intStream := make(chan int)
+	go func() {
+		defer close(intStream)
+		for v := range valueStream {
+			select {
+			case <-done:
+				return
+			case intStream <- v.(int):
+			}
+		}
+
+	}()
+	return intStream
+}
+
 //ToString stage:type assertion, Change the data type of the channel from interface {} to string
 func ToString(
 	done <-chan interface{},
