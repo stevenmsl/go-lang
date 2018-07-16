@@ -13,7 +13,10 @@ Batch processing
 Stream processing
 - Each stage will receive and emit one element at a time
 
-
+Fan out, Fan in
+You might consider fanning out one of your stages if both of the following apply:
+- It doesn’t rely on values that the stage had calculated before.
+- It takes a long time to run.
 
 */
 
@@ -29,7 +32,7 @@ import (
 
 func main() {
 	runPipelineFanOutFanIn()
-	//runPipelineSlow()
+	runPipelineSlow()
 	//runPipelineString()
 	//runPipelineTakeFn()
 	//runPipelineTake()
@@ -39,40 +42,40 @@ func main() {
 }
 
 func runPipelineFanOutFanIn() {
-	rand := func() interface{} {
-		return rand.Intn(50000000)
-	}
+
 	done := make(chan interface{})
 	defer close(done)
 	start := time.Now()
+	rand := func() interface{} {
+		return rand.Intn(50000000)
+	}
+
 	randIntStream := stage.ToInt(done, stage.RepeatFn(done, rand))
 
 	numFinders := runtime.NumCPU()
-	fmt.Printf("Num of CPU:%v\n", numFinders)
-
-	//fan out
+	fmt.Printf("Spinning up %d prime finders.\n", numFinders)
+	//fan out - starting multiple goroutines to handle input from the pipeline
 	finders := make([]<-chan interface{}, numFinders)
+	fmt.Println("Primes:")
 	for i := 0; i < numFinders; i++ {
 		finders[i] = stage.PrimeFinder(done, randIntStream)
 	}
 
-	/*
-		fmt.Println("Primes:")
-		for prime := range stage.Take(done, stage.PrimeFinder(done, randIntStream), 10) {
-			fmt.Printf("\t%d\n", prime)
-		}
-	*/
+	for prime := range stage.Take(done, stage.FanIn(done, finders...), 10) {
+		fmt.Printf("\t%d\n", prime)
+	}
+
 	fmt.Printf("Search took: %v", time.Since(start))
 
 }
 
 func runPipelineSlow() {
+
+	done := make(chan interface{})
+	defer close(done)
 	rand := func() interface{} {
 		return rand.Intn(50000000)
 	}
-	done := make(chan interface{})
-	defer close(done)
-
 	start := time.Now()
 	randIntStream := stage.ToInt(done, stage.RepeatFn(done, rand))
 	fmt.Println("Primes:")

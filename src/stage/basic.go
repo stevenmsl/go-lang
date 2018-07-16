@@ -2,6 +2,7 @@ package stage
 
 import (
 	"fmt"
+	"sync"
 )
 
 func isPrime(value int) bool {
@@ -19,6 +20,38 @@ func isPrime(value int) bool {
 	}
 
 	return true
+}
+
+//FanIn stage - multiplexing or joining together multiple streams of data into a single stream
+func FanIn(
+	done <-chan interface{},
+	channels ...<-chan interface{},
+) <-chan interface{} {
+	var wg sync.WaitGroup
+	multiplexedStream := make(chan interface{})
+	multiplex := func(c <-chan interface{}) {
+		defer wg.Done()
+		for i := range c {
+			select {
+			case <-done:
+				return
+			case multiplexedStream <- i:
+			}
+		}
+	}
+	wg.Add(len(channels))
+
+	//spinning up one goroutine for each incoming channel
+	for _, c := range channels {
+		go multiplex(c)
+	}
+	//spinning up another goroutine to wait for everyone
+	go func() {
+		wg.Wait()
+		close(multiplexedStream)
+	}()
+
+	return multiplexedStream
 }
 
 //PrimeFinder ...
