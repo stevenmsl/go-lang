@@ -22,19 +22,48 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"runtime"
 	"stage"
-
 	"time"
 )
 
 func main() {
-	runPipelineSlow()
+	runPipelineFanOutFanIn()
+	//runPipelineSlow()
 	//runPipelineString()
 	//runPipelineTakeFn()
 	//runPipelineTake()
 	//runPipelineC()
 	//runPipelineS()
 	//runPipelineBP()
+}
+
+func runPipelineFanOutFanIn() {
+	rand := func() interface{} {
+		return rand.Intn(50000000)
+	}
+	done := make(chan interface{})
+	defer close(done)
+	start := time.Now()
+	randIntStream := stage.ToInt(done, stage.RepeatFn(done, rand))
+
+	numFinders := runtime.NumCPU()
+	fmt.Printf("Num of CPU:%v\n", numFinders)
+
+	//fan out
+	finders := make([]<-chan interface{}, numFinders)
+	for i := 0; i < numFinders; i++ {
+		finders[i] = stage.PrimeFinder(done, randIntStream)
+	}
+
+	/*
+		fmt.Println("Primes:")
+		for prime := range stage.Take(done, stage.PrimeFinder(done, randIntStream), 10) {
+			fmt.Printf("\t%d\n", prime)
+		}
+	*/
+	fmt.Printf("Search took: %v", time.Since(start))
+
 }
 
 func runPipelineSlow() {
