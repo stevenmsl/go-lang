@@ -28,7 +28,7 @@ import (
 )
 
 func main() {
-	runPipelineInt()
+	runPipelineSlow()
 	//runPipelineString()
 	//runPipelineTakeFn()
 	//runPipelineTake()
@@ -37,7 +37,7 @@ func main() {
 	//runPipelineBP()
 }
 
-func runPipelineInt() {
+func runPipelineSlow() {
 	rand := func() interface{} {
 		return rand.Intn(50000000)
 	}
@@ -77,7 +77,7 @@ func runPipelineTakeFn() {
 		time.Sleep(3 * time.Second) //Wait a bit so you can see the message printed when a stage is closed.
 	}()
 	rand := func() interface{} { return rand.Int() }
-	for num := range stage.Take(done, stage.RepeatFn(done, rand), 10) {
+	for num := range stage.Take(done, stage.RepeatFn(done, rand), 2) {
 		fmt.Printf("%v\n", num)
 	}
 

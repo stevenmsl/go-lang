@@ -21,3 +21,4 @@ src/lang-slice/debug
 src/lang-interface/debug
 src/lang-channel/debug
 src/concurrent-cleanup/debug
+src/concurrent-pipeline/debug

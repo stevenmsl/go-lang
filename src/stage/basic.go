@@ -12,7 +12,13 @@ func isPrime(value int) bool {
 		return true
 	}
 
-	return false
+	for i := 2; i < value-1; i++ {
+		if value%i == 0 {
+			return false
+		}
+	}
+
+	return true
 }
 
 //PrimeFinder ...
@@ -24,10 +30,15 @@ func PrimeFinder(
 	go func() {
 		defer close(primeStream)
 		for v := range valueStream {
-			select {
-			case <-done:
-				return
-			case primeStream <- v:
+
+			if !isPrime(v) {
+				continue
+			} else {
+				select {
+				case <-done:
+					return
+				case primeStream <- v:
+				}
 			}
 		}
 
